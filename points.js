@@ -19,8 +19,8 @@ var Points = (function(){
 	return {from: a, 
 		to: b, 
 		point: points[a].point.multiply(1/phi).add(points[b].point.multiply((phi - 1) / phi)),
-		triangles: [],
-		uniform: true // Is this bordered only by blue?
+		blue: [],
+		green: []
 	       };
     }
     
@@ -48,7 +48,7 @@ var Points = (function(){
     };
     
     module.addPoint = function addPoint(p){
-	return points.push({point: p, triangles: [], uniform: true}) - 1;
+	return points.push({point: p, blue: [], green: []}) - 1;
     };
    
     module.getCoords = function getCoords(i){
@@ -60,23 +60,33 @@ var Points = (function(){
 	for(var tri in triangles){
 	    if(!triangles.hasOwnProperty(tri)) continue;
 	    var triangle = triangles[tri];
-	    var rule = triangle.green;
-	    triangle.verts.map(function(i){
-		var point = points[i];
-		point.triangles.push(tri);
-		if(!rule) point.uniform = false;
-	    });
+	    if(triangle.blue){
+		triangle.verts.map(function(i){
+		    var point = points[i];
+		    point.blue.push(tri);
+		});
+	    }else{
+		triangle.verts.map(function(i){
+		    var point = points[i];
+		    point.green.push(tri);
+		});
+	    }
 	}
     };
     // Visual debug - are we correctly ID'ing interesting points - center of stars, points on the outside, etc
     module.plotSpecialPoints = function plotUniform(){
 	points.map(function(point){
 	    var color = null;
-	    if(point.uniform){
-		color =  "#6c71c4"; // violet
+	    var green = point.green.length;
+	    var blue  = point.blue.length;
+	    if(green == 0){
+		color =  "#6c71c4"; // violet - we're a center of a 10 blue triangle
 	    }
-	    if(point.triangles.length <= 4){
-		color = color ? "#dc322f" : "#d33682";
+	    if(green == 1){
+		color = "#dc322f"; // We're on the edge, near a green
+	    }
+	    if(blue == 8){ // This isn't really useful
+		color = "#d33682";
 	    }
 	    if(color){	    
 		var dot = new paper.Shape.Circle(point.point, 4);

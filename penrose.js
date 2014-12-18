@@ -2,13 +2,13 @@
 function drawTriangles(list){
     list.map(function(tri){
 	var path = new paper.Path();
-	path.fillColor = tri.green ? '#268bd2' : '#2aa198';
+	path.fillColor = tri.blue ? '#268bd2' : '#2aa198';
 	tri.verts.map(function(x){path.add(Points.getCoords(x))});
     });
 }
 
 function Triangle(verts,color){
-    return {verts: verts, green: color};
+    return {verts: verts, blue: color};
 }
 
 function initialTriangles(radius){
@@ -34,7 +34,7 @@ function subdivide(triangles){
     var len = triangles.length;
     for(var i = 0; i < len; i++){
 	var tri = triangles[i];
-	if(tri.green){
+	if(tri.blue){
 	    var a = tri.verts[0];
 	    var b = tri.verts[1];
 	    var c = tri.verts[2];
@@ -49,7 +49,7 @@ function subdivide(triangles){
 	    var newPoint = Points.interpolate(tri.verts[1], tri.verts[0]);
 	    triangles.push(Triangle([tri.verts[2], newPoint, tri.verts[1]], false));
 	    tri.verts = [newPoint, tri.verts[2], tri.verts[0]];
-	    tri.green = true;
+	    tri.blue = true;
 	}
     }
 }
