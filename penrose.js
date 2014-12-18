@@ -2,9 +2,13 @@
 function drawTriangles(list){
     list.map(function(tri){
 	var path = new paper.Path();
-	path.fillColor = tri.rule ? '#268bd2' : '#2aa198';
+	path.fillColor = tri.green ? '#268bd2' : '#2aa198';
 	tri.verts.map(function(x){path.add(Points.getCoords(x))});
     });
+}
+
+function Triangle(verts,color){
+    return {verts: verts, green: color};
 }
 
 function initialTriangles(radius){
@@ -17,17 +21,11 @@ function initialTriangles(radius){
     for(var i = 0; i < 9; i++){
 	var theta = (i+1) * dtheta;
 	var newer = Points.addPoint(new paper.Point(radius * Math.cos(theta) , radius * Math.sin(theta)).add(center));
-	if(i % 2)
-	    triangles.push({verts: [centerIndex, old,newer], rule: 0});
-	else
-	    triangles.push({verts: [centerIndex, newer, old], rule: 0});
+	triangles.push(Triangle(i % 2 ? [centerIndex, old,newer] : [centerIndex, newer, old],false));
 	old = newer;
     }
 
-    if(i % 2)
-	triangles.push({verts: [centerIndex, old,first], rule: 0});
-    else
-	triangles.push({verts: [centerIndex, first, old], rule: 0});
+    triangles.push(Triangle(i % 2 ? [centerIndex, old, first] : [centerIndex, first, old],false));
 
     return triangles;
 }
@@ -36,7 +34,7 @@ function subdivide(triangles){
     var len = triangles.length;
     for(var i = 0; i < len; i++){
 	var tri = triangles[i];
-	if(tri.rule){
+	if(tri.green){
 	    var a = tri.verts[0];
 	    var b = tri.verts[1];
 	    var c = tri.verts[2];
@@ -44,14 +42,14 @@ function subdivide(triangles){
 	    var q = Points.interpolate(a,b);
 	    var r = Points.interpolate(c,b);
 
-	    triangles.push({verts: [r,q,a] , rule: 0});
-	    triangles.push({verts: [q,r,b] , rule: 1});
+	    triangles.push(Triangle([r,q,a],false));
+	    triangles.push(Triangle([q,r,b],true));
 	    tri.verts = [r,c,a];
 	}else{
 	    var newPoint = Points.interpolate(tri.verts[1], tri.verts[0]);
-	    triangles.push({verts: [tri.verts[2], newPoint, tri.verts[1]], rule: 0});
+	    triangles.push(Triangle([tri.verts[2], newPoint, tri.verts[1]], false));
 	    tri.verts = [newPoint, tri.verts[2], tri.verts[0]];
-	    tri.rule = 1;
+	    tri.green = true;
 	}
     }
 }

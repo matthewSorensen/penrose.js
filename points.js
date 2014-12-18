@@ -60,7 +60,7 @@ var Points = (function(){
 	for(var tri in triangles){
 	    if(!triangles.hasOwnProperty(tri)) continue;
 	    var triangle = triangles[tri];
-	    var rule = triangle.rule;
+	    var rule = triangle.green;
 	    triangle.verts.map(function(i){
 		var point = points[i];
 		point.triangles.push(tri);
