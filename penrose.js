@@ -1,27 +1,34 @@
+
 function drawTriangles(list){
     list.map(function(tri){
 	var path = new paper.Path();
 	path.fillColor = tri.rule ? '#268bd2' : '#2aa198';
-	tri.verts.map(function(x){path.add(memo[x].point)});
+	tri.verts.map(function(x){path.add(Points.getCoords(x))});
     });
 }
 
 function initialTriangles(radius){
     var center = paper.view.center;
-    var centerIndex = addPoint(center);
+    var centerIndex = Points.addPoint(center);
     var triangles = [];
     var dtheta = 0.2 * Math.PI;
-    
-    var old = addPoint(new paper.Point(radius, 0).add(center));
-    for(var i = 0; i < 10; i++){
+    var first = Points.addPoint(new paper.Point(radius, 0).add(center));
+    var old = first; //Points.addPoint(new paper.Point(radius, 0).add(center));
+    for(var i = 0; i < 9; i++){
 	var theta = (i+1) * dtheta;
-	var newer = addPoint(new paper.Point(radius * Math.cos(theta) , radius * Math.sin(theta)).add(center));
+	var newer = Points.addPoint(new paper.Point(radius * Math.cos(theta) , radius * Math.sin(theta)).add(center));
 	if(i % 2)
 	    triangles.push({verts: [centerIndex, old,newer], rule: 0});
 	else
 	    triangles.push({verts: [centerIndex, newer, old], rule: 0});
 	old = newer;
     }
+
+    if(i % 2)
+	triangles.push({verts: [centerIndex, old,first], rule: 0});
+    else
+	triangles.push({verts: [centerIndex, first, old], rule: 0});
+
     return triangles;
 }
 
@@ -34,14 +41,14 @@ function subdivide(triangles){
 	    var b = tri.verts[1];
 	    var c = tri.verts[2];
 
-	    var q = interpolate(a,b);
-	    var r = interpolate(c,b);
+	    var q = Points.interpolate(a,b);
+	    var r = Points.interpolate(c,b);
 
 	    triangles.push({verts: [r,q,a] , rule: 0});
 	    triangles.push({verts: [q,r,b] , rule: 1});
 	    tri.verts = [r,c,a];
 	}else{
-	    var newPoint = interpolate(tri.verts[1], tri.verts[0]);
+	    var newPoint = Points.interpolate(tri.verts[1], tri.verts[0]);
 	    triangles.push({verts: [tri.verts[2], newPoint, tri.verts[1]], rule: 0});
 	    tri.verts = [newPoint, tri.verts[2], tri.verts[0]];
 	    tri.rule = 1;
@@ -60,7 +67,9 @@ window.onload = function() {
     for(var i = 0; i < 6; i++){
 	subdivide(triangles);
     }
+    Points.reverseIndex(triangles);
     drawTriangles(triangles);
+    Points.plotSpecialPoints();
     // Draw the view now:
     paper.view.draw();
 };
