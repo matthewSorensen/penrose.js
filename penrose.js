@@ -2,32 +2,27 @@ function drawTriangles(list){
     list.map(function(tri){
 	var path = new paper.Path();
 	path.fillColor = tri.rule ? '#268bd2' : '#2aa198';
-	tri.verts.map(function(x){path.add(x)});
+	tri.verts.map(function(x){path.add(memo[x].point)});
     });
 }
 
 function initialTriangles(radius){
     var center = paper.view.center;
+    var centerIndex = addPoint(center);
     var triangles = [];
     var dtheta = 0.2 * Math.PI;
     
-    var old = new paper.Point(radius, 0);
+    var old = addPoint(new paper.Point(radius, 0).add(center));
     for(var i = 0; i < 10; i++){
 	var theta = (i+1) * dtheta;
-	var newer = new paper.Point(radius * Math.cos(theta) , radius * Math.sin(theta));
+	var newer = addPoint(new paper.Point(radius * Math.cos(theta) , radius * Math.sin(theta)).add(center));
 	if(i % 2)
-	    triangles.push({verts: [center, center.add(old), center.add(newer)], rule: 0});
+	    triangles.push({verts: [centerIndex, old,newer], rule: 0});
 	else
-	    triangles.push({verts: [center, center.add(newer), center.add(old)], rule: 0});
+	    triangles.push({verts: [centerIndex, newer, old], rule: 0});
 	old = newer;
     }
     return triangles;
-}
-
-var phi = 0.5 * (1 + Math.sqrt(5));
-
-function goldenSection(a,b){
-    return a.multiply(1/phi).add(b.multiply((phi - 1) / phi));
 }
 
 function subdivide(triangles){
@@ -39,14 +34,14 @@ function subdivide(triangles){
 	    var b = tri.verts[1];
 	    var c = tri.verts[2];
 
-	    var q = goldenSection(a,b);
-	    var r = goldenSection(c,b);
+	    var q = interpolate(a,b);
+	    var r = interpolate(c,b);
 
 	    triangles.push({verts: [r,q,a] , rule: 0});
 	    triangles.push({verts: [q,r,b] , rule: 1});
 	    tri.verts = [r,c,a];
 	}else{
-	    var newPoint = goldenSection(tri.verts[1], tri.verts[0]);
+	    var newPoint = interpolate(tri.verts[1], tri.verts[0]);
 	    triangles.push({verts: [tri.verts[2], newPoint, tri.verts[1]], rule: 0});
 	    tri.verts = [newPoint, tri.verts[2], tri.verts[0]];
 	    tri.rule = 1;
