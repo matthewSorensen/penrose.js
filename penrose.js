@@ -54,6 +54,47 @@ function subdivide(triangles){
     }
 }
 
+    
+// Algorithm for computing connected components
+// put all of the blue triangles into a hash
+// iterate over points, separating them into violet and red sets
+// for all of the violet points, remove all of their triangles from the hash
+// for all of the red points, snake along the chain and remove blue triangles from the hash
+// the rest are closed loops and you can pick an arbitrary blue and snake along it
+
+function connected(triangles){
+    // 5 point stars (and partial ones) consisting entirely of blue triangles
+    var simple = []; 
+    // Open strips of blue triangles
+    var open = [];
+    // First, put all of the blue triangles into a hash.
+    var unmatched = {};
+    for(var i = 0; i < triangles.length; i++)
+	if(triangles[i].blue) 
+	    unmatched[i] = true;
+    // Compute the special points - centers of simple regions, and the start of broken chains
+    var special = Points.specialPoints();
+    // Remove the triangles in each of the simple regions
+    special.centers.map(function(center){
+	var tri = Points.getTriangles(center).blue;
+	simple.push(tri);
+	tri.map(function(t){delete unmatched[t]});
+    });
+
+    special.edges.map(function(edge){
+	Points.getTriangles(edge).blue.map(function(blue){
+	    // We've already covered this triangle, either in a chain or simple region.
+	    if(!unmatched[blue]) return; 
+	    var tri = triangles[blue];
+	    // Otherwise, figure out if it's an edge triangle - if so, it'll have two incomplete verts.
+	    // we could just build up a proper set of edges, which will also make the strip traversal very easy...
+	    delete unmatched[blue];  
+	});
+    });
+
+    return unmatched;
+}
+
 
 // Only executed our code once the DOM is ready.
 window.onload = function() {
@@ -65,9 +106,26 @@ window.onload = function() {
     for(var i = 0; i < 6; i++){
 	subdivide(triangles);
     }
-    Points.reverseIndex(triangles);
-    drawTriangles(triangles);
-    Points.plotSpecialPoints();
+
+
+    for(var i = 0; i < triangles.length; i++){
+	var verts = triangles[i].verts;
+	Edges.addEdge(verts[0], verts[1], i);
+	Edges.addEdge(verts[1], verts[2], i);
+	Edges.addEdge(verts[2], verts[0], i);
+    }
+
+    Edges.drawBoundary();
+
+//    Points.reverseIndex(triangles);
+//    Points.plotSpecialPoints();
+//    var un = connected(triangles);
+//    var ntri = [];
+//    for(var i = 0; i < triangles.length; i++){
+//	if(!un[i])
+//	    ntri.push(triangles[i]);
+//    }
+//    drawTriangles(ntri);
     // Draw the view now:
     paper.view.draw();
 };
