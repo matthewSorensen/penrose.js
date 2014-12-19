@@ -1,4 +1,3 @@
-
 function drawTriangles(list){
     list.map(function(tri){
 	var path = new paper.Path();
@@ -17,7 +16,7 @@ function initialTriangles(radius){
     var triangles = [];
     var dtheta = 0.2 * Math.PI;
     var first = Points.addPoint(new paper.Point(radius, 0).add(center));
-    var old = first; //Points.addPoint(new paper.Point(radius, 0).add(center));
+    var old = first;
     for(var i = 0; i < 9; i++){
 	var theta = (i+1) * dtheta;
 	var newer = Points.addPoint(new paper.Point(radius * Math.cos(theta) , radius * Math.sin(theta)).add(center));
@@ -70,6 +69,17 @@ function nextTriangle(edgeIndex,triangleIndex,triangle, triangles){
     return null;
 }
 
+function nonGreenEdge(index,triangles){
+    var edges = triangles[index].edges;
+    for(var i = 0; i < 3; i++){
+	var result = Edges.otherNeighbor(index, edges[i]);
+	if(result === null) continue;
+	if(triangles[result].blue)
+	    return {edge: edges[i], triangle: result};
+    }
+    return null;
+}
+
 function connected(triangles){
     // 5 point stars (and partial ones) consisting entirely of blue triangles
     var simple = []; 
@@ -117,6 +127,39 @@ function connected(triangles){
 	    open.push(string);
 	});
     });
+    
+    var closed = [];
+    while(true){
+	// Get one element from unmatched, or break
+	var start = null;
+	for(var i in unmatched){
+	    if(!unmatched.hasOwnProperty(i)) continue;
+	    start = i;
+	    break;
+	}
+	if(start === null) break;
+	// Find an edge on the current triangle that doesn't border a green triangle.
+	var next = nonGreenEdge(start,triangles);
+	var strip = [i];
+	delete unmatched[i];
+
+	var edge = next.edge;
+	var triIndex  = next.triangle;
+	var tri = triangles[triIndex];
+	
+	while(true){
+	    var next = nextTriangle(edge, triIndex, tri, triangles);
+	    strip.push(triIndex);
+	    delete unmatched[triIndex];
+	    if(next === null) break;
+	    if(!unmatched[next.index]) break; // We've looped around
+
+	    edge = next.edge;
+	    triIndex = next.index;
+	    tri = next.triangle;
+	}
+    }
+
 
     return unmatched;
 }
@@ -129,7 +172,7 @@ window.onload = function() {
     // Create an empty project and a view for the canvas:
     paper.setup(canvas);
     var triangles = initialTriangles(400);
-    for(var i = 0; i < 4; i++){
+    for(var i = 0; i < 6; i++){
 	subdivide(triangles);
     }
 

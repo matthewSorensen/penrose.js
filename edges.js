@@ -51,6 +51,16 @@ var Edges = (function(Points){
     module.neighbors = function(x){
 	return edges[Math.abs(x) - 1].triangles.length;
     };
+    // Returns the index of the other triangle on this edge - iff it exists
+    module.otherNeighbor = function(triangle,edge){
+	var edge = Math.abs(edge) - 1;
+	var tris = edges[edge].triangles;
+	for(var i = 0; i < tris.length; i++){
+	    var t = tris[i];
+	    if(t != triangle) return t;
+	} 
+	return null;
+    };
 
     module.drawEdges = function drawEdges(){
 	edges.map(function(edge){
