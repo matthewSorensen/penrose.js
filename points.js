@@ -55,6 +55,11 @@ var Points = (function(){
 	return points[i].point;
     };
 
+    module.getTriangles = function getTriangles(i){
+	var point = points[i];
+	return {blue: point.blue, green: point.green};
+    };
+
     // Once we're done generating the tiling, we want to start extracting more complex shapes from it.
     module.reverseIndex = function reverse(triangles){
 	for(var tri in triangles){
@@ -73,25 +78,35 @@ var Points = (function(){
 	    }
 	}
     };
-    // Visual debug - are we correctly ID'ing interesting points - center of stars, points on the outside, etc
-    module.plotSpecialPoints = function plotUniform(){
-	points.map(function(point){
-	    var color = null;
+
+    module.specialPoints = function special(){
+	var center = [];
+	var edges  = [];
+	for(var i = 0; i < points.length; i++){
+	    var point = points[i];
 	    var green = point.green.length;
-	    var blue  = point.blue.length;
 	    if(green == 0){
-		color =  "#6c71c4"; // violet - we're a center of a 10 blue triangle
+		center.push(i);
+		continue;
 	    }
 	    if(green == 1){
-		color = "#dc322f"; // We're on the edge, near a green
+		edges.push(i);
+		continue;
 	    }
-	    if(blue == 8){ // This isn't really useful
-		color = "#d33682";
-	    }
-	    if(color){	    
-		var dot = new paper.Shape.Circle(point.point, 4);
-		dot.fillColor = color;
-	    }
+	}
+	return {centers: center, edges: edges};
+    };
+
+    // Visual debug - are we correctly ID'ing interesting points - center of stars, points on the outside, etc
+    module.plotSpecialPoints = function plotUniform(){
+	var special = module.specialPoints();
+	special.centers.map(function(i){
+	    var dot = new paper.Shape.Circle(points[i].point, 4);
+	    dot.fillColor = "#6c71c4";
+	});
+	special.edges.map(function(i){
+	    var dot = new paper.Shape.Circle(points[i].point, 4);
+	    dot.fillColor =  "#dc322f";
 	});
     };
     

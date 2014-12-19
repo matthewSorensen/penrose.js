@@ -54,13 +54,21 @@ function subdivide(triangles){
     }
 }
 
-    
-// Algorithm for computing connected components
-// put all of the blue triangles into a hash
-// iterate over points, separating them into violet and red sets
-// for all of the violet points, remove all of their triangles from the hash
-// for all of the red points, snake along the chain and remove blue triangles from the hash
-// the rest are closed loops and you can pick an arbitrary blue and snake along it
+function nextTriangle(edgeIndex,triangleIndex,triangle, triangles){
+    for(var i = 0; i < 3; i++){
+	var otherEdgeIndex = triangle.edges[i];
+	if(edgeIndex == otherEdgeIndex) 
+	    continue;
+	var neighbors = Edges.getEdge(otherEdgeIndex).triangles;
+	if(neighbors.length == 1) 
+	    return null;	
+	var other = (triangleIndex == neighbors[0]) ? neighbors[1] : neighbors[0];
+	var tri = triangles[other];
+	if(tri.blue)
+	    return {index: other, triangle: tri, edge: otherEdgeIndex};
+    }
+    return null;
+}
 
 function connected(triangles){
     // 5 point stars (and partial ones) consisting entirely of blue triangles
@@ -84,11 +92,29 @@ function connected(triangles){
     special.edges.map(function(edge){
 	Points.getTriangles(edge).blue.map(function(blue){
 	    // We've already covered this triangle, either in a chain or simple region.
-	    if(!unmatched[blue]) return; 
+	    if(!unmatched[blue]) return;
+	    // Otherwise, check if we're on a boundary, and if so, extract it.
 	    var tri = triangles[blue];
-	    // Otherwise, figure out if it's an edge triangle - if so, it'll have two incomplete verts.
-	    // we could just build up a proper set of edges, which will also make the strip traversal very easy...
-	    delete unmatched[blue];  
+	    var startingEdge = null;
+	    for(var i = 0; i < tri.edges.length; i++){
+		var thisEdge = tri.edges[i];
+		if(Edges.neighbors(thisEdge) == 1){
+		    startingEdge = thisEdge;
+		    break;
+		}
+	    }
+	    if(startingEdge === null) return;
+	    var string = [];
+	    while(true){
+		var next = nextTriangle(startingEdge, blue, tri, triangles);
+		string.push(blue);
+		delete unmatched[blue];
+		if(next === null) break;
+		startingEdge = next.edge;
+		blue = next.index;
+		tri = next.triangle;
+	    }
+	    open.push(string);
 	});
     });
 
@@ -103,29 +129,27 @@ window.onload = function() {
     // Create an empty project and a view for the canvas:
     paper.setup(canvas);
     var triangles = initialTriangles(400);
-    for(var i = 0; i < 6; i++){
+    for(var i = 0; i < 4; i++){
 	subdivide(triangles);
     }
 
-
     for(var i = 0; i < triangles.length; i++){
 	var verts = triangles[i].verts;
-	Edges.addEdge(verts[0], verts[1], i);
-	Edges.addEdge(verts[1], verts[2], i);
-	Edges.addEdge(verts[2], verts[0], i);
+	var edges = [];
+	edges.push(Edges.addEdge(verts[0], verts[1], i));
+	edges.push(Edges.addEdge(verts[1], verts[2], i));
+	edges.push(Edges.addEdge(verts[2], verts[0], i));
+	triangles[i].edges = edges;
     }
 
-    Edges.drawBoundary();
-
-//    Points.reverseIndex(triangles);
-//    Points.plotSpecialPoints();
-//    var un = connected(triangles);
-//    var ntri = [];
-//    for(var i = 0; i < triangles.length; i++){
-//	if(!un[i])
-//	    ntri.push(triangles[i]);
-//    }
-//    drawTriangles(ntri);
+    Points.reverseIndex(triangles);
+    var un = connected(triangles);
+    var ntri = [];
+    for(var i = 0; i < triangles.length; i++){
+	if(!un[i])
+	    ntri.push(triangles[i]);
+    }
+    drawTriangles(ntri);
     // Draw the view now:
     paper.view.draw();
 };

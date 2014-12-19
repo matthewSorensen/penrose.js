@@ -48,6 +48,10 @@ var Edges = (function(Points){
 	return edges[Math.abs(index) - 1];
     };
 
+    module.neighbors = function(x){
+	return edges[Math.abs(x) - 1].triangles.length;
+    };
+
     module.drawEdges = function drawEdges(){
 	edges.map(function(edge){
 	    var path = new paper.Path(Points.getCoords(edge.start), Points.getCoords(edge.end));
