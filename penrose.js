@@ -153,15 +153,14 @@ function connected(triangles){
 	    delete unmatched[triIndex];
 	    if(next === null) break;
 	    if(!unmatched[next.index]) break; // We've looped around
-
 	    edge = next.edge;
 	    triIndex = next.index;
 	    tri = next.triangle;
 	}
+	closed.push(strip);
     }
 
-
-    return unmatched;
+    return {simple: simple, open: open, closed: closed};
 }
 
 
@@ -172,7 +171,7 @@ window.onload = function() {
     // Create an empty project and a view for the canvas:
     paper.setup(canvas);
     var triangles = initialTriangles(400);
-    for(var i = 0; i < 6; i++){
+    for(var i = 0; i < 7; i++){
 	subdivide(triangles);
     }
 
@@ -186,11 +185,13 @@ window.onload = function() {
     }
 
     Points.reverseIndex(triangles);
-    var un = connected(triangles);
+    var regions = connected(triangles);
     var ntri = [];
-    for(var i = 0; i < triangles.length; i++){
-	if(!un[i])
-	    ntri.push(triangles[i]);
+    for(var i = 0; i < regions.closed.length; i++){
+	var closed = regions.closed[i];
+	for(var j = 0; j < closed.length; j++){
+	    ntri.push(triangles[closed[j]]);
+	}
     }
     drawTriangles(ntri);
     // Draw the view now:
