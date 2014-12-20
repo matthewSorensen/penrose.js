@@ -56,7 +56,7 @@ function subdivide(triangles){
 function nextTriangle(edgeIndex,triangleIndex,triangle, triangles){
     for(var i = 0; i < 3; i++){
 	var otherEdgeIndex = triangle.edges[i];
-	if(edgeIndex == otherEdgeIndex) 
+	if(Math.abs(edgeIndex) == Math.abs(otherEdgeIndex)) 
 	    continue;
 	var neighbors = Edges.getEdge(otherEdgeIndex).triangles;
 	if(neighbors.length == 1) 
