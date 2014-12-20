@@ -186,14 +186,19 @@ window.onload = function() {
 
     Points.reverseIndex(triangles);
     var regions = connected(triangles);
-    var ntri = [];
+    for(var i = 0; i < regions.closed.length; i++){
+	var region = regions.closed[i];
+	Geo.paintContour(Geo.closedContour(region.map(function(x){return triangles[x];})));
+    }
+
+/*    var ntri = [];
     for(var i = 0; i < regions.closed.length; i++){
 	var closed = regions.closed[i];
 	for(var j = 0; j < closed.length; j++){
 	    ntri.push(triangles[closed[j]]);
 	}
-    }
-    drawTriangles(ntri);
+    } 
+    drawTriangles(ntri); */
     // Draw the view now:
     paper.view.draw();
 };
