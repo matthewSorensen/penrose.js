@@ -1,3 +1,7 @@
+// New approach - just traverse the edges and get contours natively?
+
+
+
 function drawTriangles(list){
     list.map(function(tri){
 	var path = new paper.Path();

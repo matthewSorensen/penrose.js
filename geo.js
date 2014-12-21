@@ -4,7 +4,8 @@ var Geo = (function(){
     function isLeft(a,b,c){
 	return ( (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y) );
     }
-    
+    // Refactor this to eliminate all explicit computations involving extended points
+    // Also, can we treat the closed polygons as open ones, with a zero area spur?
     module.pointInPolygon = function pointInPolygon(point,polygon, closed){
 	var winding = 0;
 	var thisPoint = Points.getCoords(polygon[0]);
@@ -69,7 +70,7 @@ var Geo = (function(){
 	    }
 	}
     }
-
+    // Make this absolutely correct for open segments
     module.contour = function contour(triangles, closed){
 	var start = triangles[0];
 	var point = Points.getCoords(start.verts[0])
@@ -82,7 +83,7 @@ var Geo = (function(){
 	var one = [common.start];
 	var two = [common.end];
 	
-	for(var i = 0; i < triangles.length - 1 ; i++){
+	for(var i = 0; i < triangles.length - 1; i++){
 	    var next = triangles[(i+1) % triangles.length];
 	    var nshared = Edges.getEdge(shared(start.edges, next.edges));
 	    if(nshared.start == one[0]){
@@ -96,7 +97,20 @@ var Geo = (function(){
 	    }
 	    start = next;
 	}
-
+	// wooo yet another special case
+	if(!closed){
+	    var nshared = Edges.getEdge(chooseStartingEdge([triangles[triangles.length -1]],false));
+	    if(nshared.start == one[0]){
+		two.unshift(nshared.end);
+	    }else if(nshared.end == one[0]){
+		two.unshift(nshared.start);
+	    }else if(nshared.start == two[0]){
+		one.unshift(nshared.end);
+	    }else{
+		one.unshift(nshared.start);
+	    }
+	}
+	
 	if(module.pointInPolygon(point,one,closed)){
 	    return {outer: one, inner: two, point: point, closed: closed, triangles: triangles};
 	}else{
