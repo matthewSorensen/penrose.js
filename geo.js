@@ -29,9 +29,9 @@ var Geo = (function(){
     function shared(a,b){
 	for(var i = 0; i < 2; i++){
 	    var edge = a[i];
-	    var normed = Math.abs(edge) - 1;
+	    var normed = Math.abs(edge);
 	    for(var j = 0; j < 3; j++){
-		if(normed == Math.abs(b[j]) - 1) return edge;
+		if(normed == Math.abs(b[j])) return edge;
 	    }
 	}
 	return a[2];
@@ -44,14 +44,14 @@ var Geo = (function(){
 	    .add(Points.getCoords(start.verts[1])).
 	    add(Points.getCoords(start.verts[2])).multiply(1/3);
 	// Find the edge shared between the first and last triangle
-	var edge = shared(start.edges,triangles[triangles.length - 1].edges);
+	var edge = shared(start.edges,triangles[1].edges);
 	// There are two contours, but we don't know which one is the inside yet
 	var common = Edges.getEdge(edge);
 	var one = [common.start];
 	var two = [common.end];
 	
-	for(var i = 0; i < triangles.length ; i++){
-	    var next = triangles[i];
+	for(var i = 0; i < triangles.length - 1 ; i++){
+	    var next = triangles[(i+1) % triangles.length];
 	    var nshared = Edges.getEdge(shared(start.edges, next.edges));
 	    if(nshared.start == one[0]){
 		two.unshift(nshared.end);
@@ -72,25 +72,49 @@ var Geo = (function(){
 	}
     };
 
+    function addTo(hier, contour){
+	var children = [];
+	var siblings = [];
+	for(var i = 0; i < hier.length; i++){
+	    if(module.pointInPolygon(hier[i].point, contour.outer)){
+		children.push(hier[i]);
+	    }else{
+		siblings.push(hier[i]);
+	    }
+	}
+	contour.children = children;
+	siblings.push(contour);
+	return siblings;
+    }
+
+
+    module.hierarchy = function hierarchy(contours){
+	contours.sort(function(a,b){return a.outer.length - b.outer.length;});
+	var hier = [];
+	for(var i = 0; i < contours.length; i++){
+	    hier = addTo(hier, contours[i]);
+	}
+	console.log(hier);
+	return hier;
+    };
+
+    function drawOutline(points,color){
+	var line = new paper.Path();
+	line.strokeColor = color;
+	line.closed = true;
+	points.map(function(point){ line.add(Points.getCoords(point)); });
+	return line;
+    }
+
     module.paintContour = function paintContour(contour){
 	// First, paint a nice little circle to show the point on the contour.
 	var dot = new paper.Shape.Circle(contour.point, 4);
 	dot.fillColor =  "#dc322f";
-
-	var outer = new paper.Path();
-	outer.strokeColor = "#d33682";
-	outer.closed = true;
-	contour.outer.map(function(point){
-	    outer.add(Points.getCoords(point));
-	});
-
-	var inner = new paper.Path();
-	inner.strokeColor = "#6c71c4";
-	inner.closed = true;
-	contour.inner.map(function(point){
-	    inner.add(Points.getCoords(point));
-	});
-
+	// Then draw both of the outlines - outer in magenta, inner in violet
+	drawOutline(contour.outer,"#d33682");
+	drawOutline(contour.inner,"#6c71c4");
     };
+
+
     return module;
 }());

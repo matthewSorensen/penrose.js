@@ -171,7 +171,7 @@ window.onload = function() {
     // Create an empty project and a view for the canvas:
     paper.setup(canvas);
     var triangles = initialTriangles(400);
-    for(var i = 0; i < 7; i++){
+    for(var i = 0; i < 6; i++){
 	subdivide(triangles);
     }
 
@@ -186,11 +186,24 @@ window.onload = function() {
 
     Points.reverseIndex(triangles);
     var regions = connected(triangles);
+
+    var contours = [];
     for(var i = 0; i < regions.closed.length; i++){
 	var region = regions.closed[i];
-	Geo.paintContour(Geo.closedContour(region.map(function(x){return triangles[x];})));
+	var cont = Geo.closedContour(region.map(function(x){return triangles[x];}));
+	Geo.paintContour(cont);
+	contours.push(cont);
     }
 
+    for(var i = 0; i < regions.open.length; i++){
+	var region = regions.open[i];
+	var cont = Geo.closedContour(region.map(function(x){return triangles[x];}));
+	Geo.paintContour(cont);
+	contours.push(cont);
+    }
+  
+
+//    Geo.hierarchy(contours);
 /*    var ntri = [];
     for(var i = 0; i < regions.closed.length; i++){
 	var closed = regions.closed[i];
