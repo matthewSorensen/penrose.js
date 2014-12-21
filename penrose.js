@@ -12,14 +12,14 @@ function Triangle(verts,color){
 
 function initialTriangles(radius){
     var center = paper.view.center;
-    var centerIndex = Points.addPoint(center);
+    var centerIndex = Points.addPoint(new paper.Point(0,0));
     var triangles = [];
     var dtheta = 0.2 * Math.PI;
-    var first = Points.addPoint(new paper.Point(radius, 0).add(center));
+    var first = Points.addPoint(new paper.Point(radius, 0));
     var old = first;
     for(var i = 0; i < 9; i++){
 	var theta = (i+1) * dtheta;
-	var newer = Points.addPoint(new paper.Point(radius * Math.cos(theta) , radius * Math.sin(theta)).add(center));
+	var newer = Points.addPoint(new paper.Point(radius * Math.cos(theta) , radius * Math.sin(theta)));
 	triangles.push(Triangle(i % 2 ? [centerIndex, old,newer] : [centerIndex, newer, old],false));
 	old = newer;
     }
@@ -170,6 +170,9 @@ window.onload = function() {
     var canvas = document.getElementById('myCanvas');
     // Create an empty project and a view for the canvas:
     paper.setup(canvas);
+    Points.setCenter(paper.view.center);
+
+
     var triangles = initialTriangles(400);
     for(var i = 0; i < 6; i++){
 	subdivide(triangles);
@@ -190,20 +193,20 @@ window.onload = function() {
     var contours = [];
     for(var i = 0; i < regions.closed.length; i++){
 	var region = regions.closed[i];
-	var cont = Geo.closedContour(region.map(function(x){return triangles[x];}));
+	var cont = Geo.contour(region.map(function(x){return triangles[x];}), true);
 	Geo.paintContour(cont);
 	contours.push(cont);
     }
 
     for(var i = 0; i < regions.open.length; i++){
 	var region = regions.open[i];
-	var cont = Geo.closedContour(region.map(function(x){return triangles[x];}));
+	var cont = Geo.contour(region.map(function(x){return triangles[x];}), false);
 	Geo.paintContour(cont);
 	contours.push(cont);
     }
   
-
-//    Geo.hierarchy(contours);
+    Geo.hierarchy(contours);
+    
 /*    var ntri = [];
     for(var i = 0; i < regions.closed.length; i++){
 	var closed = regions.closed[i];

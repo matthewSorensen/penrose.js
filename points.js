@@ -7,6 +7,13 @@ var Points = (function(){
     var hashToKey = {};
     var points = [];
 
+    // We're interested in tracking how big of a disk the points lie in
+    var center = new paper.Point(0,0);
+    var maxRadius = 0;
+    module.setCenter = function(point){
+	center = point;
+    };
+
     // This is criminally bad, of course - but works really well until we get to 2^16 triangles.
     // Of course, our fabrication methods become unhappy before then anyways...
     function hash(a,b){
@@ -48,11 +55,12 @@ var Points = (function(){
     };
     
     module.addPoint = function addPoint(p){
+	maxRadius = Math.max(maxRadius,Math.sqrt(p.x*p.x + p.y*p.y));
 	return points.push({point: p, blue: [], green: []}) - 1;
     };
    
     module.getCoords = function getCoords(i){
-	return points[i].point;
+	return points[i].point.add(center);
     };
 
     module.getTriangles = function getTriangles(i){
@@ -108,6 +116,13 @@ var Points = (function(){
 	    var dot = new paper.Shape.Circle(points[i].point, 4);
 	    dot.fillColor =  "#dc322f";
 	});
+    };
+    // Extend a point so that it's definitely outside of the bounding disk.
+    // Extending the center is of course undefined
+    module.extendedCoords = function extend(n){
+	var p = points[n].point;
+	var r = Math.sqrt(p.x * p.x + p.y * p.y);
+	return p.multiply(maxRadius / r).add(center);
     };
     
     return module;

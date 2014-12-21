@@ -5,11 +5,30 @@ var Geo = (function(){
 	return ( (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y) );
     }
     
-    module.pointInPolygon = function pointInPolygon(point,polygon){
+    module.pointInPolygon = function pointInPolygon(point,polygon, closed){
 	var winding = 0;
 	var thisPoint = Points.getCoords(polygon[0]);
-	for(var i = 0; i < polygon.length; i++){
-	    var nextPoint = Points.getCoords(polygon[(i+1) % polygon.length]);
+	var n = polygon.length;
+	var m = n + (closed ? 0 : 2);
+	for(var i = 0; i < m; i++){
+	    var nextPoint = null;
+	    if(closed){
+		nextPoint = Points.getCoords(polygon[(i+1) % polygon.length]);
+	    }else{
+		switch(i - n){
+		case -1:
+		    nextPoint = Points.extendedCoords(polygon[n-1]);
+		    break;
+		case 0:
+		    nextPoint = Points.extendedCoords(polygon[0]);
+		    break;
+		case 1:
+		    nextPoint = Points.getCoords(polygon[0]);
+		    break;
+		default:
+		    nextPoint = Points.getCoords(polygon[i]);
+		}
+	    }
 	    if (thisPoint.y <= point.y) {
 		if (nextPoint.y  > point.y){
                     if (isLeft(thisPoint,nextPoint, point) > 0)	winding++;
@@ -22,6 +41,8 @@ var Geo = (function(){
             }	    
 	    thisPoint = nextPoint;
 	}
+
+
 	return winding;
     };
 
@@ -38,7 +59,7 @@ var Geo = (function(){
     }
 
 
-    module.closedContour = function closedContour(triangles){
+    module.contour = function contour(triangles, closed){
 	var start = triangles[0];
 	var point = Points.getCoords(start.verts[0])
 	    .add(Points.getCoords(start.verts[1])).
@@ -65,10 +86,10 @@ var Geo = (function(){
 	    start = next;
 	}
 
-	if(module.pointInPolygon(point,one)){
-	    return {outer: one, inner: two, point: point};
+	if(module.pointInPolygon(point,one,closed)){
+	    return {outer: one, inner: two, point: point, closed: closed};
 	}else{
-	    return {outer: two, inner: one, point: point};
+	    return {outer: two, inner: one, point: point, closed: closed};
 	}
     };
 
