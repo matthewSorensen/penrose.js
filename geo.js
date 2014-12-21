@@ -136,6 +136,17 @@ var Geo = (function(){
 	drawOutline(contour.inner,"#6c71c4");
     };
 
+    module.paintHeirarchy = function paintHeirarchy(hier){
+	function paint(cont,depth){
+	    for(var i = 0; i < cont.length; i++){
+		var color = colorbrewer.YlOrRd[4][depth % 4];
+		drawOutline(cont[i].outer,color);
+		drawOutline(cont[i].inner,color);
+		paint(cont[i].children, depth + 1);
+	    }
+	}
+	paint(hier,0);
+    };
 
     return module;
 }());
