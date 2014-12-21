@@ -119,10 +119,11 @@ var Points = (function(){
     };
     // Extend a point so that it's definitely outside of the bounding disk.
     // Extending the center is of course undefined
+    // The 100x is a massively ugly hack because I don't want to do math.
     module.extendedCoords = function extend(n){
 	var p = points[n].point;
 	var r = Math.sqrt(p.x * p.x + p.y * p.y);
-	return p.multiply(maxRadius / r).add(center);
+	return p.multiply(maxRadius / r * 100).add(center);
     };
     
     return module;

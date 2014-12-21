@@ -58,6 +58,17 @@ var Geo = (function(){
 	return a[2];
     }
 
+    function chooseStartingEdge(triangles,closed){
+	var first = triangles[0].edges;
+	if(closed){
+	    return shared(first, triangles[1].edges);
+	}else{
+	    for(var i = 0; i < 3; i++){
+		if(Edges.neighbors(first[i]) < 2) 
+		    return first[i];
+	    }
+	}
+    }
 
     module.contour = function contour(triangles, closed){
 	var start = triangles[0];
@@ -65,7 +76,7 @@ var Geo = (function(){
 	    .add(Points.getCoords(start.verts[1])).
 	    add(Points.getCoords(start.verts[2])).multiply(1/3);
 	// Find the edge shared between the first and last triangle
-	var edge = shared(start.edges,triangles[1].edges);
+	var edge = chooseStartingEdge(triangles,closed);
 	// There are two contours, but we don't know which one is the inside yet
 	var common = Edges.getEdge(edge);
 	var one = [common.start];
@@ -87,9 +98,9 @@ var Geo = (function(){
 	}
 
 	if(module.pointInPolygon(point,one,closed)){
-	    return {outer: one, inner: two, point: point, closed: closed};
+	    return {outer: one, inner: two, point: point, closed: closed, triangles: triangles};
 	}else{
-	    return {outer: two, inner: one, point: point, closed: closed};
+	    return {outer: two, inner: one, point: point, closed: closed, triangles: triangles};
 	}
     };
 
@@ -97,7 +108,7 @@ var Geo = (function(){
 	var children = [];
 	var siblings = [];
 	for(var i = 0; i < hier.length; i++){
-	    if(module.pointInPolygon(hier[i].point, contour.outer)){
+	    if(module.pointInPolygon(hier[i].point, contour.outer,contour.closed)){
 		children.push(hier[i]);
 	    }else{
 		siblings.push(hier[i]);
@@ -119,10 +130,10 @@ var Geo = (function(){
 	return hier;
     };
 
-    function drawOutline(points,color){
+    function drawOutline(points,color,closed){
 	var line = new paper.Path();
 	line.strokeColor = color;
-	line.closed = true;
+	line.closed = closed;
 	points.map(function(point){ line.add(Points.getCoords(point)); });
 	return line;
     }
@@ -132,17 +143,20 @@ var Geo = (function(){
 	var dot = new paper.Shape.Circle(contour.point, 4);
 	dot.fillColor =  "#dc322f";
 	// Then draw both of the outlines - outer in magenta, inner in violet
-	drawOutline(contour.outer,"#d33682");
-	drawOutline(contour.inner,"#6c71c4");
+	drawOutline(contour.outer,"#d33682", contour.closed);
+	drawOutline(contour.inner,"#6c71c4", contour.closed);
     };
 
     module.paintHeirarchy = function paintHeirarchy(hier){
 	function paint(cont,depth){
+	    cont.sort(function(a,b){return b.outer.length - a.outer.length;});
 	    for(var i = 0; i < cont.length; i++){
-		var color = colorbrewer.YlOrRd[4][depth % 4];
-		drawOutline(cont[i].outer,color);
-		drawOutline(cont[i].inner,color);
-		paint(cont[i].children, depth + 1);
+		var delta = cont[i].outer.length > cont[cont.length - 1].outer.length ? 1 : 0;
+		delta *= cont[i].closed ? 1 : -1;
+		var color = colorbrewer.YlOrRd[9][(delta + depth + 4) % 9];
+		drawOutline(cont[i].outer,color,cont[i].closed);
+		drawOutline(cont[i].inner,color,cont[i].closed);
+		paint(cont[i].children, depth + delta);
 	    }
 	}
 	paint(hier,0);

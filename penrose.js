@@ -174,7 +174,7 @@ window.onload = function() {
 
 
     var triangles = initialTriangles(400);
-    for(var i = 0; i < 8; i++){
+    for(var i = 0; i < 9; i++){
 	subdivide(triangles);
     }
 
@@ -194,27 +194,16 @@ window.onload = function() {
     for(var i = 0; i < regions.closed.length; i++){
 	var region = regions.closed[i];
 	var cont = Geo.contour(region.map(function(x){return triangles[x];}), true);
-//	Geo.paintContour(cont);
 	contours.push(cont);
     }
 
-  ///  for(var i = 0; i < regions.open.length; i++){
-//	var region = regions.open[i];
-//	var cont = Geo.contour(region.map(function(x){return triangles[x];}), false);
-//	Geo.paintContour(cont);
-//	contours.push(cont);
- //   }
-  
-    Geo.paintHeirarchy(Geo.hierarchy(contours));
+    for(var i = 0; i < regions.open.length; i++){
+	var region = regions.open[i];
+	var cont = Geo.contour(region.map(function(x){return triangles[x];}), false);
+	contours.push(cont);
+    }
     
-/*    var ntri = [];
-    for(var i = 0; i < regions.closed.length; i++){
-	var closed = regions.closed[i];
-	for(var j = 0; j < closed.length; j++){
-	    ntri.push(triangles[closed[j]]);
-	}
-    } 
-    drawTriangles(ntri); */
+    Geo.paintHeirarchy(Geo.hierarchy(contours));
     // Draw the view now:
     paper.view.draw();
 };
