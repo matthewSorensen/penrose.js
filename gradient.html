@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/paper.js/0.9.18/paper-full.js"></script>
+<script type="text/javascript" src="colorbrewer.js"></script>
+<script type="text/javascript">
+window.onload = function() {
+    // Get a reference to the canvas object
+    var canvas = document.getElementById('myCanvas');
+    // Create an empty project and a view for the canvas:
+    paper.setup(canvas);
+
+    var center = paper.view.center;
+    var b = center.add(new paper.Point(100,200));
+    var c = center.add(new paper.Point(-100,200));
+
+
+    var path = new paper.Path();
+    var scale = colorbrewer.YlOrRd[3];
+    path.fillColor = {
+      gradient: {
+            stops: [scale[0],scale[2]]
+        },
+        origin: b.add(center).multiply(0.5),
+        destination: c
+    };
+
+    path.add(center);
+    path.add(b);
+    path.add(c);
+
+    paper.view.draw();
+};
+</script>
+</head>
+
+<body>
+  <canvas id="myCanvas" resize style="background-color:#073642"></canvas>
+</body>
+</html>
