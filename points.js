@@ -70,18 +70,17 @@ var Points = (function(){
 
     // Once we're done generating the tiling, we want to start extracting more complex shapes from it.
     module.reverseIndex = function reverse(triangles){
-	for(var tri in triangles){
-	    if(!triangles.hasOwnProperty(tri)) continue;
-	    var triangle = triangles[tri];
+	for(var j = 0; j < triangles.length; j++){
+	    var triangle = triangles[j];
 	    if(triangle.blue){
 		triangle.verts.map(function(i){
 		    var point = points[i];
-		    point.blue.push(tri);
+		    point.blue.push(j);
 		});
 	    }else{
 		triangle.verts.map(function(i){
 		    var point = points[i];
-		    point.green.push(tri);
+		    point.green.push(j);
 		});
 	    }
 	}
@@ -123,7 +122,7 @@ var Points = (function(){
     module.extendedCoords = function extend(n){
 	var p = points[n].point;
 	var r = Math.sqrt(p.x * p.x + p.y * p.y);
-	return p.multiply(maxRadius / r * 100).add(center);
+	return p.multiply(maxRadius / r * 1000).add(center);
     };
     
     return module;
