@@ -47,6 +47,7 @@ var Geo = (function(){
 	return winding;
     };
 
+
     // Reaaaly naive, but we have tiny problems
     function shared(a,b){
 	for(var i = 0; i < 2; i++){
@@ -58,6 +59,33 @@ var Geo = (function(){
 	}
 	return a[2];
     }
+
+    module.simpleContour = function simpleContour(simple){
+	var first = simple[0].verts;
+	var second =  simple[1].verts;
+	var third =  simple[2].verts;
+
+	var intersection = first.filter(function(v){return -1 != second.indexOf(v)});
+	var center = intersection.filter(function(v){return -1 != third.indexOf(v)})[0];
+	var start = first.filter(function(v){return -1 == intersection.indexOf(v) ;})[0];
+	
+	var points = {};
+	var keys = [start];
+	points[start] = true;
+
+	for(var i = 0; i < simple.length; i++){
+	    var verts = simple[i].verts;
+	    for(var j = 0; j < 3; j++){
+		var vert = verts[j];
+		if(vert != center && !points[vert]){
+		    keys.unshift(vert);
+		    points[vert] = true;
+		}
+	    }
+	}	
+	return {outer: keys, inner: [center], closed: true, point: center};
+    };
+
 
     function chooseStartingEdge(triangles,closed){
 	var first = triangles[0].edges;
@@ -140,11 +168,16 @@ var Geo = (function(){
 	for(var i = 0; i < contours.length; i++){
 	    hier = addTo(hier, contours[i]);
 	}
-	console.log(hier);
 	return hier;
     };
 
     function drawOutline(points,color,closed){
+	if(points.length == 1){
+	    var dot = new paper.Shape.Circle(Points.getCoords(points[0]), 4);
+	    dot.fillColor =  color;
+	    return;
+	}
+
 	var line = new paper.Path();
 	line.strokeColor = color;
 	line.closed = closed;
@@ -167,9 +200,10 @@ var Geo = (function(){
 	    for(var i = 0; i < cont.length; i++){
 		var delta = cont[i].outer.length > cont[cont.length - 1].outer.length ? 1 : 0;
 		delta *= cont[i].closed ? 1 : -1;
-		var color = colorbrewer.YlOrRd[9][(delta + depth + 4) % 9];
-		drawOutline(cont[i].outer,color,cont[i].closed);
-		drawOutline(cont[i].inner,color,cont[i].closed);
+		var outer = colorbrewer.YlOrRd[9][(depth + delta + 4) % 9];
+		var inner = colorbrewer.YlOrRd[9][(depth + delta + 4) % 9];
+		drawOutline(cont[i].outer,outer,cont[i].closed);
+		drawOutline(cont[i].inner,inner,cont[i].closed);
 		paint(cont[i].children, depth + delta);
 	    }
 	}

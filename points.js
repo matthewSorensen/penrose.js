@@ -92,14 +92,15 @@ var Points = (function(){
 	for(var i = 0; i < points.length; i++){
 	    var point = points[i];
 	    var green = point.green.length;
-	    if(green == 0){
-		center.push(i);
-		continue;
-	    }
 	    if(green == 1){
 		edges.push(i);
 		continue;
 	    }
+	    if(green == 0){
+		center.push(i);
+		continue;
+	    }
+	 
 	}
 	return {centers: center, edges: edges};
     };

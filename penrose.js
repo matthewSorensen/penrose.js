@@ -1,7 +1,3 @@
-// New approach - just traverse the edges and get contours natively?
-
-
-
 function drawTriangles(list){
     list.map(function(tri){
 	var path = new paper.Path();
@@ -72,6 +68,25 @@ function nextTriangle(edgeIndex,triangleIndex,triangle, triangles){
     }
     return null;
 }
+// Takes the triangle index, the edge index, and the set of unmatched triangles,
+// and returns a triangle strip
+function triangleStrip(triangleI,edgeI,unmatched,triangles){
+    var strip =  [triangleI];
+    var triangle = triangles[triangleI];
+    while(true){
+	if(!unmatched[triangleI]) 
+	    break;
+	delete unmatched[triangleI];
+	var next = nextTriangle(edgeI,triangleI,triangle,triangles);
+	if(next === null)
+	    break;
+	strip.push(next.index);
+	triangleI = next.index;
+	edgeI = next.edge;
+	triangle = next.triangle;
+    }
+    return strip;
+}
 
 function nonGreenEdge(index,triangles){
     var edges = triangles[index].edges;
@@ -96,12 +111,42 @@ function connected(triangles){
 	    unmatched[i] = true;
     // Compute the special points - centers of simple regions, and the start of broken chains
     var special = Points.specialPoints();
+
     // Remove the triangles in each of the simple regions
     special.centers.map(function(center){
-	var tri = Points.getTriangles(center).blue;
-	simple.push(tri);
-	tri.map(function(t){delete unmatched[t]});
+	var tris = Points.getTriangles(center).blue;
+	// We'll just handle this as a normal closed thing
+	if(tris.length == 10) return;
+	
+	var start = null;
+	var edge = null;
+	for(var i = 0; i < tris.length; i++){
+	    var tri = triangles[tris[i]];
+	    for(var j = 0; j < 3; j++){
+		if(2 != Edges.neighbors(tri.edges[j])){
+		    start = tris[i];
+		    edge = tri.edges[j];
+		    break;
+		}
+	    }
+	    if(start !== null) break;
+	}
+	var strip = triangleStrip(start, edge, unmatched, triangles);
+	console.log(strip.length, tris.length);
+	simple.push(strip);
+//	var index = Points.getTriangles(center).blue[0];
+//	if(Points.getTriangles(center).blue.length == 10)
+//	    return;
+
+//	var triangle = triangles[index];
+//	var edge = (center == triangle.verts[0]) ? triangle.edges[0] : triangle.edges[1];
+//	var strip = triangleStrip(index, edge, unmatched, triangles);
+//	console.log(strip.length,Points.getTriangles(center).blue.length);
+//	simple.push(strip);
+	tris.map(function(t){delete unmatched[t]});
     });
+
+
 
     special.edges.map(function(edge){
 	Points.getTriangles(edge).blue.map(function(blue){
@@ -116,24 +161,14 @@ function connected(triangles){
 		    startingEdge = thisEdge;
 		    break;
 		}
-	    }
+	    }  
 	    if(startingEdge === null) return;
-	    var string = [];
-	    while(true){
-		var next = nextTriangle(startingEdge, blue, tri, triangles);
-		string.push(blue);
-		delete unmatched[blue];
-		if(next === null) break;
-		startingEdge = next.edge;
-		blue = next.index;
-		tri = next.triangle;
-	    }
-	    open.push(string);
+	    open.push(triangleStrip(blue,startingEdge,unmatched,triangles));
 	});
     });
     
     var closed = [];
-    while(true){
+    while(true){	
 	// Get one element from unmatched, or break
 	var start = null;
 	for(var i in unmatched){
@@ -144,26 +179,8 @@ function connected(triangles){
 	if(start === null) break;
 	// Find an edge on the current triangle that doesn't border a green triangle.
 	var next = nonGreenEdge(start,triangles);
-	var strip = [i];
-	delete unmatched[i];
-
-	var edge = next.edge;
-	var triIndex  = next.triangle;
-	var tri = triangles[triIndex];
-	
-	while(true){
-	    var next = nextTriangle(edge, triIndex, tri, triangles);
-	    strip.push(triIndex);
-	    delete unmatched[triIndex];
-	    if(next === null) break;
-	    if(!unmatched[next.index]) break; // We've looped around
-	    edge = next.edge;
-	    triIndex = next.index;
-	    tri = next.triangle;
-	}
-	closed.push(strip);
+	closed.push(triangleStrip(next.triangle,next.edge,unmatched,triangles));
     }
-
     return {simple: simple, open: open, closed: closed};
 }
 
@@ -178,7 +195,7 @@ window.onload = function() {
 
 
     var triangles = initialTriangles(400);
-    for(var i = 0; i < 9; i++){
+    for(var i = 0; i < 5; i++){
 	subdivide(triangles);
     }
 
@@ -195,6 +212,13 @@ window.onload = function() {
     var regions = connected(triangles);
 
     var contours = [];
+   
+    for(var i = 0; i < regions.simple.length; i++){
+	var region = regions.simple[i];
+	var cont = Geo.simpleContour(region.map(function(x){return triangles[x];}));
+	contours.push(cont);
+    }
+  
     for(var i = 0; i < regions.closed.length; i++){
 	var region = regions.closed[i];
 	var cont = Geo.contour(region.map(function(x){return triangles[x];}), true);
